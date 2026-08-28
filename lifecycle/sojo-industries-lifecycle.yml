@@ -1,0 +1,49 @@
+generated: '2026-08-28'
+method: derived
+source: >-
+  openapi/sojo-industries-victoria-agent-openapi.json, live MCP initialize on
+  https://victoria-agent.sojoshield.com/mcp, and probes of https://api.sojoshield.com
+versioning:
+  shield_api:
+    scheme: uri-path
+    current: v3
+    base: https://api.sojoshield.com/api/v3/
+    evidence: >-
+      The base URL is hard-coded as serverUrl="https://api.sojoshield.com/api/v3/" in the public
+      Sojo Shield SPA bundle, and /api/v3/ answers with the same 401 envelope as the host root.
+    note: 'v1 and v2 are implied by the numbering; no migration or sunset policy is published.'
+  victoria_api:
+    scheme: none
+    current: 'langgraph-production'
+    evidence: 'openapi.json info.version is the literal string "langgraph-production" — an environment label, not a version.'
+    note: >-
+      An unversioned info.version is a real consumer risk: a client cannot tell one published
+      contract revision from the next, and there is no path or header version to pin.
+  mcp_server:
+    scheme: semver
+    current: 3.4.5
+    protocol_version: '2025-06-18'
+    evidence: 'MCP initialize serverInfo {"name":"SOJO Planning Assistant","version":"3.4.5"}'
+deprecation:
+  policy_published: false
+  sunset_header: false
+  deprecation_header: false
+  rfc8594: false
+  deprecated_operations: []
+  note: 'No deprecation or sunset policy found on any host, and no operation in the OpenAPI carries deprecated: true.'
+status_page:
+  published: false
+  url: null
+  note: >-
+    No status page found. status.sojoindustries.com and status.sojoshield.com do not resolve
+    (NXDOMAIN), and no status.* link appears on sojoindustries.com. The nearest thing is the
+    unauthenticated GET /health and GET /ready on victoria-agent.sojoshield.com, which are
+    infrastructure probes, not a public incident-history page.
+  health_endpoints:
+  - {url: 'https://victoria-agent.sojoshield.com/health', status: 200}
+  - {url: 'https://victoria-agent.sojoshield.com/ready', status: 200}
+sla:
+  published: false
+changelog:
+  published: false
+  note: 'No dated changelog or release-notes page found on sojoindustries.com, sojoshield.com or api.sojoshield.com.'

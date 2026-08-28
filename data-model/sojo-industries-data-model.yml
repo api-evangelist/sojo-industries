@@ -1,0 +1,122 @@
+generated: '2026-08-28'
+method: derived
+source: >-
+  openapi/sojo-industries-victoria-agent-openapi.json and mcp/sojo-industries-mcp-tools.json
+note: >-
+  The Victoria OpenAPI declares components.schemas as EMPTY — all 10 operations use inline,
+  unnamed body schemas and no response is schematised at all. There is therefore no $ref graph to
+  walk. The entity model below is derived from the two places real typed structure does exist: the
+  inline request bodies, and the six MCP tool inputSchemas, which are the richest published
+  description of Sojo's domain nouns.
+schema_source_gap:
+  components_schemas: 0
+  operations: 10
+  operations_with_response_schema: 0
+  impact: >-
+    A consumer cannot generate a typed client from this contract. Every response must be handled as
+    untyped JSON. This is the single largest contract-quality gap on the Sojo surface.
+
+entities:
+- name: Conversation
+  aka: [thread, session]
+  identifier: session_id
+  identifier_type: string
+  operations: ['POST /orchestrate', 'POST /api/chat', 'GET /api/chat/conversations', 'GET /api/chat/conversation/{session_id}', 'PATCH /api/chat/conversation/{session_id}', 'DELETE /api/chat/conversation/{session_id}', 'GET /api/chat/conversation/export/{session_id}']
+  fields:
+  - {name: session_id, type: string, note: 'Nullable on create — omitting it starts a new conversation'}
+  - {name: title, type: string, constraints: 'minLength 1, maxLength 60 after trimming'}
+  lifecycle: 'Created implicitly by an orchestrate/chat turn; renamed by PATCH; soft-deleted by DELETE; exported as a debug snapshot.'
+  ownership: 'Scoped to the Stytch identity resolved from the bearer token. A foreign session_id returns 404, not 403.'
+
+- name: Message
+  identifier: null
+  operations: ['POST /api/chat', 'GET /api/chat/conversation/{session_id}']
+  fields:
+  - {name: messages, type: 'array<object>', note: 'AI SDK shape; the latest user message is used'}
+  - {name: message, type: string, note: 'Alternative single-string form'}
+  note: 'Not independently addressable — messages exist only inside a Conversation.'
+
+- name: UploadedFile
+  aka: [image]
+  identifier: image_id
+  identifier_type: string
+  operations: ['POST /upload-image']
+  fields:
+  - {name: body, type: 'string(binary)', content_type: application/octet-stream}
+  note: >-
+    Minted unauthenticated by POST /upload-image and then referenced by image_id from
+    analyze_dieline and analyze_pallet_pattern. /orchestrate also accepts a files[] array that
+    references an uploaded file "by exactly one of" several key forms.
+
+- name: Dieline
+  aka: [carton, packaging drawing]
+  identifier: null
+  source: 'MCP tool analyze_dieline inputSchema'
+  fields:
+  - {name: pack_size, required: true}
+  - {name: case_length}
+  - {name: case_width}
+  - {name: case_height}
+  - {name: minor_flap_length}
+  - {name: major_flap_top}
+  - {name: is_corrugate}
+  - {name: board_type}
+  - {name: can_size}
+  - {name: target_line, note: 'The packaging line the dieline is evaluated against'}
+  - {name: confirmed}
+  - {name: extraction_notes}
+
+- name: PalletPattern
+  identifier: null
+  source: 'MCP tool analyze_pallet_pattern inputSchema'
+  fields:
+  - {name: pack_config, required: true}
+  - {name: can_size}
+  - {name: shipper_type}
+  - {name: shipper_length}
+  - {name: shipper_width}
+  - {name: shipper_height}
+  - {name: cases_per_layer}
+  - {name: layers_per_load}
+  - {name: picks_per_layer}
+  - {name: shipper_pattern}
+  - {name: pallet_pattern}
+  - {name: target_palletizer}
+  - {name: confirmed}
+  note: 'Evaluated for compatibility against SOJO''s commissioned patterns.'
+
+- name: DatabaseTable
+  identifier: table_name
+  source: 'MCP tools list_tables / describe_table / get_table_sample'
+  fields:
+  - {name: table_name, required: true}
+  - {name: database, note: 'Schema selector'}
+  - {name: limit, note: 'Sampling bound on get_table_sample'}
+  note: >-
+    The underlying data core is relational and introspectable through MCP. The tool descriptions
+    name two distinct upstream systems: NetSuite Assembly Build views (production totals) and Raven
+    (machine efficiency, uptime, downtime, OEE).
+
+- name: ProductionQuery
+  source: 'MCP tool query_database inputSchema'
+  fields: [question, query, context, session_id, skus, line, facility, num_flavors, pack_size, difference_type, desc1, desc2, output_case]
+  note: >-
+    The domain nouns leak through this tool''s parameters: SKU, line, facility, flavour count and
+    pack size are Sojo''s primary production dimensions.
+
+relationships:
+- {from: Conversation, to: Message, type: has_many, via: 'messages (embedded)'}
+- {from: Conversation, to: UploadedFile, type: has_many, via: 'files[] on POST /orchestrate'}
+- {from: Dieline, to: UploadedFile, type: belongs_to, via: image_id}
+- {from: PalletPattern, to: UploadedFile, type: belongs_to, via: image_id}
+- {from: Dieline, to: Conversation, type: belongs_to, via: session_id}
+- {from: PalletPattern, to: Conversation, type: belongs_to, via: session_id}
+- {from: ProductionQuery, to: Conversation, type: belongs_to, via: session_id}
+- {from: ProductionQuery, to: DatabaseTable, type: has_many, via: 'RAG-retrieved SQL patterns'}
+
+upstream_systems:
+- {name: 'Oracle NetSuite', role: 'Production totals via Assembly Build views', evidence: 'query_database tool description'}
+- {name: Raven, role: 'Machine data — efficiency, uptime, downtime, OEE', evidence: 'query_database tool description'}
+- {name: Pinecone, role: 'Vector index sojo-planning-knowledge for RAG retrieval', evidence: 'GET /health'}
+- {name: PostgreSQL, role: 'Conversation persistence (KMS-encrypted)', evidence: 'GET /health persistence block'}
+- {name: Redis, role: 'Identity resolution cache for Stytch token -> Shield identity', evidence: 'openapi info.description + GET /health'}

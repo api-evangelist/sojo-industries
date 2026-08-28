@@ -1,0 +1,58 @@
+generated: '2026-08-28'
+method: probed
+source: 'direct HTTPS probes, 2026-08-28'
+note: >-
+  Nothing was found. Four hosts were probed and every /.well-known/* path missed. Two
+  distinct failure modes are recorded rather than collapsed: sojoshield.com is a Vite/React
+  single-page app on S3+CloudFront whose catch-all answers HTTP 200 with the same 733-byte
+  index.html shell for EVERY path — those rows are marked spa_shell: true and are MISSES,
+  not documents. api.sojoshield.com answers 401 to every path including /.well-known/*,
+  which means the well-known namespace sits behind the same bearer wall as the API. No
+  WellKnown or SecurityTxt pointer is emitted in apis.yml, because this file documents an
+  absence.
+
+hosts:
+- host: www.sojoindustries.com
+  documents:
+  - {path: /.well-known/security.txt, status: 404, file: null}
+  - {path: /.well-known/openid-configuration, status: 404, file: null}
+  - {path: /.well-known/oauth-authorization-server, status: 404, file: null}
+  - {path: /.well-known/api-catalog, status: 404, file: null}
+  - {path: /.well-known/ai-plugin.json, status: 404, file: null}
+  - {path: /.well-known/agent-card.json, status: 404, file: null}
+  - {path: /.well-known/agent.json, status: 404, file: null}
+
+- host: sojoshield.com
+  spa_catch_all: true
+  documents:
+  - {path: /.well-known/security.txt, status: 200, file: null, spa_shell: true, note: 'HTML SPA shell (733 bytes), not a document'}
+  - {path: /.well-known/openid-configuration, status: 200, file: null, spa_shell: true, note: 'HTML SPA shell (733 bytes), not a document'}
+  - {path: /.well-known/oauth-authorization-server, status: 200, file: null, spa_shell: true, note: 'HTML SPA shell (733 bytes), not a document'}
+  - {path: /.well-known/api-catalog, status: 200, file: null, spa_shell: true, note: 'HTML SPA shell (733 bytes), not a document'}
+  - {path: /.well-known/ai-plugin.json, status: 200, file: null, spa_shell: true, note: 'HTML SPA shell (733 bytes), not a document'}
+  - {path: /.well-known/agent-card.json, status: 200, file: null, spa_shell: true, note: 'HTML SPA shell (733 bytes), not a document'}
+  - {path: /.well-known/agent.json, status: 200, file: null, spa_shell: true, note: 'HTML SPA shell (733 bytes), not a document'}
+
+- host: api.sojoshield.com
+  documents:
+  - {path: /.well-known/security.txt, status: 401, file: null, note: 'UNAUTHORIZED — no bearer token provided'}
+  - {path: /.well-known/oauth-authorization-server, status: 401, file: null, note: 'UNAUTHORIZED — no bearer token provided'}
+  - {path: /.well-known/oauth-protected-resource, status: 401, file: null, note: 'UNAUTHORIZED — no bearer token provided'}
+  - {path: /.well-known/api-catalog, status: 401, file: null, note: 'UNAUTHORIZED — no bearer token provided'}
+  - {path: /.well-known/agent-card.json, status: 401, file: null, note: 'UNAUTHORIZED — no bearer token provided'}
+  - {path: /.well-known/agent.json, status: 401, file: null, note: 'UNAUTHORIZED — no bearer token provided'}
+
+- host: victoria-agent.sojoshield.com
+  documents:
+  - {path: /.well-known/oauth-authorization-server, status: 404, file: null}
+  - {path: /.well-known/oauth-protected-resource, status: 404, file: null}
+  - {path: /.well-known/agent-card.json, status: 404, file: null}
+  - {path: /.well-known/agent.json, status: 404, file: null}
+
+summary:
+  hosts_probed: 4
+  paths_probed: 26
+  real_documents_found: 0
+  security_txt: false
+  api_catalog: false
+  agent_card: false

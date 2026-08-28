@@ -1,0 +1,17 @@
+generated: '2026-08-28'
+method: searched
+source: https://www.sojoindustries.com/
+plan_count: 0
+plans: []
+pricing_page: null
+note: >-
+  Sojo Industries publishes no pricing of any kind. sojoindustries.com is a single-page Webflow
+  marketing site whose only conversion path is a contact form (#contact-section), a phone number
+  ((888) 873-0537) and support@sojoindustries.com. There is no pricing page, no plan comparison,
+  no per-API metering and no self-service sign-up — the commercial motion is enterprise co-packing
+  contracts and Sojo Shield tenant agreements, both sold through sales. This is an honest zero, not
+  a gap in the search.
+evidence:
+- {url: 'https://www.sojoindustries.com/', status: 200, note: 'No pricing section or pricing link anywhere in the page HTML'}
+- {url: 'https://sojoindustries.com/contact-us', status: 404, note: 'The site links its own contact page and it 404s'}
+- {url: 'https://api.sojoshield.com/docs', status: 200, note: 'Swagger UI carries no plan, quota or tier information'}

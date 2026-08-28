@@ -1,0 +1,77 @@
+generated: '2026-08-28'
+method: derived
+source: >-
+  openapi/sojo-industries-victoria-agent-openapi.json (4xx/5xx responses) plus a live
+  unauthenticated probe of https://api.sojoshield.com that returned the real error envelope
+format: custom
+rfc9457: false
+note: >-
+  Neither surface uses RFC 9457 application/problem+json. The Victoria OpenAPI documents status
+  codes with prose descriptions but declares no error schema and no response content type for any
+  4xx/5xx. The Shield platform API does return a consistent structured envelope, which we captured
+  from a live 401 rather than from a spec.
+
+envelope:
+  observed_on: https://api.sojoshield.com
+  method: probed
+  http_status_observed: 401
+  content_type: application/json
+  shape:
+    data:
+      message: 'human-readable string'
+    error:
+      code: 'machine-readable UPPER_SNAKE code'
+      details: 'object'
+  example_codes_observed:
+  - UNAUTHORIZED
+  caveat: >-
+    Only the unauthenticated 401 path could be observed. The full code registry is behind the
+    bearer wall and Sojo publishes no error reference, so this catalog is a floor, not a census.
+
+problem_types:
+- status: 400
+  operations: ['POST /orchestrate', 'POST /api/chat', 'POST /upload-image']
+  title: Bad request
+  detail: 'Message or files required (/orchestrate); no user message provided (/api/chat); empty body (/upload-image).'
+  remediation: 'Send a non-empty message, a messages[] array with a user turn, or a non-empty octet-stream body.'
+- status: 401
+  operations: ['POST /orchestrate', 'POST /api/chat', 'GET /api/chat/conversations', 'GET /api/chat/conversation/{session_id}', 'PATCH /api/chat/conversation/{session_id}', 'DELETE /api/chat/conversation/{session_id}', 'GET /api/chat/conversation/export/{session_id}']
+  title: Unauthorized
+  detail: >-
+    Missing or invalid Stytch session JWT when auth is enabled. The conversation routes describe
+    this as "no identity (missing/invalid token, or bypass origin)".
+  code: UNAUTHORIZED
+  remediation: 'Present Authorization: Bearer <Stytch session JWT>.'
+- status: 404
+  operations: ['GET /api/chat/conversations', 'GET /api/chat/conversation/{session_id}', 'PATCH /api/chat/conversation/{session_id}', 'DELETE /api/chat/conversation/{session_id}', 'GET /api/chat/conversation/export/{session_id}']
+  title: Not found
+  detail: >-
+    Absent, deleted or foreign conversation — or chat history is not enabled for the deployment.
+    NOTE: this conflates authorization failure with absence. A conversation belonging to another
+    identity returns the same 404 as one that never existed.
+  remediation: 'Confirm chat history is enabled and the session_id belongs to the calling identity.'
+- status: 422
+  operations: ['POST /orchestrate', 'GET /api/chat/conversations', 'PATCH /api/chat/conversation/{session_id}']
+  title: Unprocessable entity
+  detail: >-
+    An attached file could not be read (out-of-scope key or unreadable object) — re-upload and
+    retry; invalid page/limit; title must be 1-60 characters after trimming.
+  remediation: 'Re-upload the file, correct pagination bounds, or trim the title to 1-60 characters.'
+- status: 503
+  operations: ['POST /orchestrate', 'GET /ready']
+  title: Service unavailable
+  detail: >-
+    Retrieval failed at the connector level (treated as an infrastructure error); or persistence
+    is enabled but not healthy, with a reason included in the /ready body.
+  remediation: 'Retry with backoff; check GET /ready for the persistence reason.'
+
+- status: 503
+  operations: ['GET /swagger.json (api.sojoshield.com)']
+  title: Swagger spec not initialised
+  detail: >-
+    Not an application error but a published-contract defect. The public Swagger UI at
+    https://api.sojoshield.com/docs loads /swagger.json, and that URL returns
+    {"error": "Swagger spec not initialised"} with HTTP 503. The developer surface exists and
+    renders, but the spec behind it never loads for anyone.
+  method: probed
+  remediation: 'Provider-side: initialise and serve the Shield API OpenAPI document at /swagger.json.'

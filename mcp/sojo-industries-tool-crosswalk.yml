@@ -1,0 +1,91 @@
+generated: '2026-08-28'
+method: derived
+source: 'mcp/sojo-industries-mcp-tools.json + openapi/sojo-industries-victoria-agent-openapi.json'
+description: >-
+  Binds the six live MCP tools on the SOJO Planning Assistant to the REST operations
+  published in the same service's OpenAPI. The two surfaces are deliberately NON-
+  OVERLAPPING here: the REST contract exposes the conversational shell (orchestrate,
+  streaming chat, conversation CRUD, image upload, health) while every tool exposes the
+  planning/production data core behind it. There is no REST operation that calls a named
+  tool directly, so the honest crosswalk is "no 1:1 binding" for all six.
+
+surfaces:
+  openapi:
+    file: openapi/sojo-industries-victoria-agent-openapi.json
+    url: https://victoria-agent.sojoshield.com/openapi.json
+    gated: false
+    note: >-
+      Fetched anonymously, HTTP 200. Declares no operationId on any of its 10 operations,
+      so crosswalk rows below reference METHOD+PATH rather than operationId.
+  mcp:
+    url: https://victoria-agent.sojoshield.com/mcp
+    gated: false
+    note: 'initialize + tools/list succeeded anonymously; inputSchemas are the real published ones.'
+  graphql:
+    url: null
+    note: 'No GraphQL surface found. https://api.sojoshield.com/graphql returns 401 UNAUTHORIZED (the host-wide auth wall), not a GraphQL error.'
+  shield_rest:
+    url: https://api.sojoshield.com/api/v3/
+    gated: true
+    note: >-
+      The Sojo Shield product API. Every path returns 401 "No bearer token provided."
+      Its Swagger UI is public at https://api.sojoshield.com/docs but the spec it loads
+      (/swagger.json) returns HTTP 503 {"error": "Swagger spec not initialised"}, so no
+      operations can be crosswalked to it.
+
+crosswalk: []
+
+mcp_only:
+- tool: query_database
+  reason: >-
+    No public REST operation. Reachable only as a tool call, or indirectly by prompting
+    POST /orchestrate or POST /api/chat, which choose tools internally.
+- tool: list_tables
+  reason: 'Schema introspection is exposed as a tool only; no REST equivalent is published.'
+- tool: describe_table
+  reason: 'Schema introspection is exposed as a tool only; no REST equivalent is published.'
+- tool: get_table_sample
+  reason: 'Schema introspection is exposed as a tool only; no REST equivalent is published.'
+- tool: analyze_dieline
+  reason: >-
+    Packaging-geometry analysis has no REST operation. It consumes an image_id produced
+    by POST /upload-image, which is the only REST touchpoint in its flow.
+- tool: analyze_pallet_pattern
+  reason: >-
+    Palletiser-compatibility analysis has no REST operation. Also consumes an image_id
+    from POST /upload-image.
+
+rest_only:
+- operation: 'POST /orchestrate'
+  reason: 'Non-streaming orchestration turn — the agent entry point that dispatches tools; not itself a tool.'
+- operation: 'POST /api/chat'
+  reason: 'SSE streaming chat (AI SDK UI Message Stream Protocol). No tool equivalent.'
+- operation: 'GET /api/chat/conversations'
+  reason: 'Conversation list. Session management is not exposed through MCP.'
+- operation: 'GET /api/chat/conversation/{session_id}'
+  reason: 'Read a thread. Not exposed through MCP.'
+- operation: 'PATCH /api/chat/conversation/{session_id}'
+  reason: 'Rename a thread. Not exposed through MCP.'
+- operation: 'DELETE /api/chat/conversation/{session_id}'
+  reason: 'Soft-delete a thread. Not exposed through MCP.'
+- operation: 'GET /api/chat/conversation/export/{session_id}'
+  reason: 'Debug snapshot export. Not exposed through MCP.'
+- operation: 'POST /upload-image'
+  reason: >-
+    Unauthenticated image ingest that mints the image_id both analyze_* tools accept.
+    It is the only real REST->MCP handoff in the service, but it is a prerequisite, not a binding.
+- operation: 'GET /health'
+  reason: 'Infrastructure probe.'
+- operation: 'GET /ready'
+  reason: 'Infrastructure probe.'
+
+coverage:
+  mcp_tools: 6
+  rest_operations: 10
+  bound: 0
+  mcp_only: 6
+  rest_only: 10
+  note: >-
+    Zero bindings is the finding, not a gap in the derivation. The MCP server and the
+    REST contract are two different projections: one is the data core, the other is the
+    conversation shell around it.

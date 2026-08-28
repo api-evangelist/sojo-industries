@@ -1,0 +1,604 @@
+{
+  "tools": [
+    {
+      "name": "query_database",
+      "description": "\u2b50 PRIMARY TOOL - Use this FIRST for any SOJO-specific question.\n\nThis tool uses intelligent RAG retrieval to find SQL patterns, documentation, and domain knowledge. It handles production data, equipment specs, machine capabilities, and company-specific information.\n\n\u26a0\ufe0f PRODUCTION vs MACHINE DATA:\n- Production totals (\"how many did we produce?\") \u2192 Assembly Build views (NetSuite)\n- Efficiency/uptime/downtime/OEE \u2192 Raven (machine data)\n- If user explicitly says \"Raven\" for production \u2192 use Raven\n- DEFAULT: production quantity = Assembly Build, machine metrics = Raven\n\n\ud83d\udea8 ALWAYS query this tool for SOJO-specific information - do NOT answer from general knowledge.\n\nALWAYS START HERE - Do NOT use list_tables, describe_table, or validate_sku_line_feasibility first.\n\n\ud83d\udea8 CRITICAL: Copy the user's question CHARACTER-FOR-CHARACTER as a literal string.\n- Do NOT rephrase, expand, clarify, or \"improve\" the wording\n- Do NOT add words like \"production\", \"manufacturing\", \"facility\", \"currently\"\n- Do NOT fix grammar or capitalization\n- The tool uses semantic matching that REQUIRES the user's exact phrasing\n- Any modification will break template matching and cause failures\n\nSCHEDULING QUERIES - Built-in validation:\n- Pass the COMPLETE request: \"Schedule VP28103 (7200 cases), VP28104 (5000 cases) on BS1, Monday 7am, maximize margin\"\n- The tool automatically validates SKU compatibility\n- If validation fails, it returns issues WITH your original request preserved\n- After user clarifies, re-call with the CORRECTED complete request\n- Do NOT call validate_sku_line_feasibility directly - this tool handles it\n\nThe tool automatically retrieves:\n- SQL templates for common query patterns\n- Schema information for correct column names\n- Domain knowledge FAQs for context\n\nThis tool supports THREE modes:\n\nMODE 1: Natural Language Question (PREFERRED)\n- Provide 'question' parameter with your question in plain English\n- Example: question=\"What is my most profitable SKU?\"\n- Example: question=\"Build schedule for VP28103 (7200 cases), VP28104 (5000) on ID1, Monday 7am, maximize margin\"\n\nSOP / VP LOOKUP QUERIES \u2014 ALWAYS use this tool for ANY question about a VP code or SOP:\n- \"Show me all SOPs for VP13030\" \u2192 returns all SOP records for that SKU\n- \"Compare SOPs for VP13030\" \u2192 returns all versions/lines to compare\n- \"What are the differences between VP13030 SOPs?\" \u2192 use this, NOT memory/chat search\n- \"How many people to run Refresco Bloom 3-flv 18pk?\" \u2192 staffing from SOP data\n- \"What SOPs were created yesterday?\" \u2192 recently created SOPs\n- ANY mention of \"VP\" + digits = use this tool with skus hint\n\nMODE 2: Direct SQL (Only if you have specific SQL from a previous response)\n- Provide 'query' parameter with SQL\n- TABLE SCHEMAS: NS_MAIN is in SYSTEMS_DATA.SILVER (margins/pricing/CPM). ITEM_SOP_RECORD is in SYSTEMS_DATA.SILVER (SOP operational data). PLANNING_FORMAT is in SYSTEMS_DATA.SILVER. CHANGEOVERS, LINE_SPECS are in SYSTEMS_DATA.METADATA. RAVEN_SEGMENTS is in MACHINEDATA.PUBLIC.\n\nMODE 3: Knowledge/Culture Questions\n- Example: question=\"What is the SOJO MOJO?\"\n\nFor DIELINE ANALYSIS, use the analyze_dieline tool instead.\n\nThe response includes the SQL pattern used - reuse it for follow-up queries.\n\nOPTIONAL ENTITY HINTS (improve accuracy when provided):\n- skus: VP codes from the question (e.g., [\"VP103003\", \"VP59024\"])\n- line: Line or machine name (e.g., \"BS1\", \"CTC40\")\n- num_flavors: Flavor count from \"4 flv\", \"4-flavor\" \u2192 4\n- pack_size: Pack size from \"12pk\", \"12-pack\", \"24PK\" \u2192 12\n- difference_type: Changeover type (e.g., \"format_type\", \"container\")\n- desc1, desc2: Product descriptions for changeover\n- output_case: Inner case count from NxM patterns like \"3x8\" \u2192 8, \"4x6\" \u2192 6 (the M, not total)\nWhen present, these skip internal regex extraction. When absent, extraction is automatic.\nOnly fill these when the user's message clearly contains the information.\n",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "skus": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "facility": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "num_flavors": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "pack_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "difference_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "desc1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "desc2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "output_case": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "list_tables",
+      "description": "List available tables in a database schema.\n\n\u26a0\ufe0f PREFER query_database FIRST - It has built-in knowledge of table structures and optimized SQL patterns. Only use list_tables if query_database doesn't have the information you need.\n\nDatabases:\n- planning (default): SYSTEMS_DATA.METADATA (changeovers, line specs) + SYSTEMS_DATA.SILVER (PLANNING_FORMAT, NS_MAIN pricing/margins) + SYSTEMS_DATA.SILVER (ITEM_SOP_RECORD SOP data)\n- machine: MACHINEDATA.PUBLIC - Raven machine metrics (efficiency, uptime, downtime, OEE \u2014 NOT production totals)\n",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "database": {
+            "default": "planning",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "describe_table",
+      "description": "Get table schema (columns, data types).\n\n\u26a0\ufe0f PREFER query_database FIRST - It has built-in knowledge of table schemas and optimized SQL patterns for common queries (profitability, changeovers, efficiency). Only use describe_table if you need raw column details not available through query_database.\n\nKey tables (with schema):\n- ITEM_SOP_RECORD (SYSTEMS_DATA.SILVER): SOP operational data (headcount, pallets, lot codes, labels)\n- NS_MAIN (SYSTEMS_DATA.SILVER): SKU pricing, margins, CPM rates\n- PLANNING_FORMAT (SYSTEMS_DATA.SILVER): Product specifications (SKU attributes)\n- RAVEN_SEGMENTS (MACHINEDATA.PUBLIC): Machine metrics \u2014 efficiency, uptime, downtime, OEE (NOT production totals)\n- LINE_SPECS (SYSTEMS_DATA.METADATA): Changeover rules + format compatibility (PACKAGING_TYPES) ONLY. Line inventory, machine identity/type, and facility come from MASTER_ASSET (OEM/MODEL_NAME/ASSET_TYPE/WAREHOUSE) + MASTER_BAY_ASSIGNMENT, NOT LINE_SPECS.\n- CHANGEOVERS (SYSTEMS_DATA.METADATA): Changeover time rules\n",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "table_name": {
+            "type": "string"
+          },
+          "database": {
+            "default": "planning",
+            "type": "string"
+          }
+        },
+        "required": [
+          "table_name"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_table_sample",
+      "description": "Get sample rows from a table.\n\n\u26a0\ufe0f PREFER query_database FIRST - It has optimized SQL patterns that already know the correct columns and joins. Only use get_table_sample for edge cases where you need to see raw data not covered by query_database.\n\nReturns first N rows (default: 5).\n",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "table_name": {
+            "type": "string"
+          },
+          "limit": {
+            "default": 5,
+            "type": "integer"
+          },
+          "database": {
+            "default": "planning",
+            "type": "string"
+          }
+        },
+        "required": [
+          "table_name"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "analyze_dieline",
+      "description": "ALWAYS use this tool when a user uploads or shares a carton, dieline, packaging\nblueprint, or box drawing image \u2014 even if they just ask \"what are the dimensions?\"\nDo NOT try to read dimensions from the image yourself \u2014 this tool has reference\nguides and CLIP matching that produce far more accurate results.\n\nAlso use this tool for: \"carton dimensions\", \"case dimensions\", \"flap dimensions\",\n\"can this carton run on [line]\", \"dieline compatibility\", \"analyze this dieline\".\n\nA dieline is a blueprint for packaging \u2014 it maps out cut lines, creases, perforations, glue areas, and all critical dimensions needed to assemble the final package.\n\nCheck dieline compatibility. THREE-STEP PROCESS:\n\nIF THE USER UPLOADED A DIELINE IMAGE (HTTP flow only):\n  POST the image to /upload-image \u2192 get image_id \u2192 pass here.\n  The server uses CLIP to auto-select the closest reference. Skip manual Step 0.\n\nSTEP 0 \u2014 GET REFERENCES: Call with pack_size ONLY (no dimensions).\n  Returns labeled reference dielines filtered by pack size. Each reference has\n  BLUE LABELS showing the NAME of each panel (Length, Width, Height, Minor Flap).\n\nSTEP 1 \u2014 EXTRACT & VERIFY: Call WITH dimensions (no confirmed flag).\n  The server shows extracted dimensions for user review.\n\nSTEP 2 \u2014 CONFIRM: Call WITH confirmed=true after user approves.\n  Runs the full compatibility analysis.\n\n\ud83d\udea8 ALWAYS call step 0 FIRST. Do NOT extract dimensions before seeing references.\n\nRequired for steps 1-2: case_length, case_width, case_height, pack_size\n\nPRODUCT IDENTIFICATION (do this FIRST, before extracting dimensions):\n1. Read the TITLE BLOCK on the dieline \u2014 it explicitly states what the product is\n   Examples: \"12pk 12oz Sleek\", \"24pk 12oz Standard RSC\", \"6pk 16oz Std Carton\"\n   Extract: pack_size, can_size, package_type (carton vs RSC vs tray)\n2. Read the BOARD SPEC \u2014 identifies carton vs corrugate:\n   - Cartons: paperboard thickness 0.018\"-0.024\" (e.g., \"024 CRB\", \"021 SBS\")\n   - RSC/Corrugate: flute + ECT (e.g., \"B-32ECT\", \"C-23ECT\")\n   - Trays: usually corrugate, open-top\n3. Check for \"Loading Dimensions (W\u00d7D\u00d7H)\" in the spec block \u2014 if present, these ARE your dimensions:\n   W = case_width, D = case_length (depth), H = case_height\n\nEXTRACTION PROCEDURE (AFTER viewing step 0 references):\n<step1> MATCH: Find the reference image whose flat layout matches the user's dieline.\n<step2> MAP: The reference's blue labels tell you which panel is Length, Width, Height, etc.\n        Find the SAME panels (by position/structure) in the user's dieline.\n<step3> READ: Read the NUMBER from each mapped panel in the user's dieline.\n        Use exact fractions. Report each number with the dimension NAME from the reference.\n        \u26a0\ufe0f Do NOT derive dimensions arithmetically. READ them from the labeled panels.\n<step4> VALIDATE case_height: Must be CLOSE to a known can height (within ~0.25\"):\n        7.5oz Sleek: 4.088\"    8oz Sleek: 4.313\"    200ml: 4.310\"\n        12oz Std: 4.812\"       8.4oz Slim: 5.276\"    12oz Sleek: 6.127\"\n        16oz Std: 6.190\"       16oz Sleek: 6.807\"    19.2oz Std: 7.410\"\n        24oz Std: 7.610\"\n        If no match \u2192 you mapped the wrong panel as Height \u2192 re-check against reference.\n<step5> VALIDATE case_width/case_length using pack arrangement and can diameter:\n        Can diameters: Sleek=2.259\", Std=2.600\", Slim=2.080\", 24oz=2.862\"\n        For 12pk (3\u00d74) 12oz Std: width \u2248 3\u00d72.6=7.8\", length \u2248 4\u00d72.6=10.4\"\n        If your values differ by more than 1\" from expected, re-check panel mapping.\n<step6> IDENTIFY FLAPS: Minor flap = between major flaps in TOP/BOTTOM rows (1.0-2.5\").\n        The ~1.2\" glue flap on left/right edge is NOT minor_flap.\n\nMEASUREMENT PRECISION:\n  - Paperboard cartons: measured to 1/64\"\n  - Corrugate: measured to 1/32\"\n  Always use EXACT fraction conversions. Common values:\n  1 9/32\"  = 1.28125  (NOT 1.281)     1 5/32\"  = 1.15625  (NOT 1.156)\n  4 17/32\" = 4.53125  (NOT 4.531)     5 31/32\" = 5.96875  (NOT 5.969)\n\nCONFIDENCE SELF-ASSESSMENT (report in extraction_notes):\n- HIGH: case_height within 0.25\" of known can height AND reference images viewed in step 0\n- MEDIUM: Dimensions readable but references NOT viewed \u2014 max confidence without step 0\n- LOW: Had to guess between two panels, or image resolution insufficient\n",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "pack_size": {
+            "type": "integer"
+          },
+          "case_length": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "case_width": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "case_height": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "minor_flap_length": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "major_flap_top": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "is_corrugate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "target_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "board_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "can_size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "extraction_notes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "image_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "pack_size"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "analyze_pallet_pattern",
+      "description": "Check pallet pattern compatibility against SOJO's commissioned patterns.\n\nTHREE-STEP PROCESS (mirrors dieline analysis):\n\nSTEP 0 \u2014 GET REFERENCES: Call with pack_config ONLY (and optionally can_size, shipper_type).\n  Returns all commissioned patterns grouped by palletizer (DMM, Vention Cobot,\n  Vention Industrial, Top Tier) with shipper dims, cases/layer, layers, efficiency.\n  Also returns CLIP visual reference images.\n\nSTEP 1 \u2014 EXTRACT & VERIFY: Call WITH shipper dimensions (shipper_length, shipper_width,\n  shipper_height), no confirmed flag.\n  Cross-validates your dimensions against known standards for that configuration.\n  Shows specs for user review. Flags anomalies (e.g., dims differ from typical).\n\nSTEP 2 \u2014 CONFIRM: Call WITH confirmed=true after user approves.\n  Runs full compatibility analysis against all palletizers:\n  - Dimensional constraints (min/max, bump turn limits, pick length)\n  - Gripper compatibility (shipper_type \u2192 gripper selection)\n  - DMM: exact commissioned pattern match required\n  - Top Tier: package width, slip sheet availability\n  Returns compatibility matrix + matching standard patterns + recommendations.\n\nWHEN A USER UPLOADS A TOPS PRO PDF OR PALLET PATTERN IMAGE:\n1. (HTTP flow) POST image to /upload-image \u2192 get image_id \u2192 pass here for CLIP matching\n2. Extract specs from the data table:\n   - pack_config: e.g. \"24pk\", \"2x12pk\", \"4x6pk\"\n   - can_size: e.g. \"12oz Sleek\", \"12oz Standard\", \"16oz Standard\"\n   - shipper_type: \"carton\", \"rsc\", or \"tray\"\n   - shipper_length, shipper_width, shipper_height (OD inches from TOPS Pro)\n   - cases_per_layer, layers_per_load\n   - shipper_pattern: e.g. \"4x6x1\"\n   - pallet_pattern: e.g. \"Custom\", \"Interlock\", \"Column\"\n3. Call Step 1 with all extracted params for review\n4. Call Step 2 with confirmed=true for full analysis\n",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "pack_config": {
+            "type": "string"
+          },
+          "can_size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "shipper_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "shipper_length": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "shipper_width": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "shipper_height": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "cases_per_layer": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "layers_per_load": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "picks_per_layer": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "shipper_pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "pallet_pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "target_palletizer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "image_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "pack_config"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    }
+  ]
+}

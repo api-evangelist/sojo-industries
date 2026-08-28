@@ -1,23 +1,152 @@
 aid: sojo-industries
 name: Sojo Industries
-description: 'Sojo Industries is a company surfaced via the API Evangelist harvest backlog (source: secondary-market)
-  and added to the network as a stub for full-pipeline profiling.'
+description: >-
+  Sojo Industries is a national industrial-automation and supply-chain technology company
+  founded in 2021 and headquartered in Bristol, Pennsylvania, serving the food and beverage
+  industry with robotics-driven variety packing, multi-packing and assembly. It operates
+  fixed Sojo Hubs across Pennsylvania, New Jersey, California and Texas plus Sojo Flight
+  mobile manufacturing lines that are trucked to a customer's own plant to eliminate freight,
+  labour and packaging cost. Its software arm is Sojo Shield, a blockchain-backed track-and-trace
+  platform — a Built for NetSuite SuiteApp — that captures geolocated critical tracking events
+  from the factory floor through to the retailer so brands can meet the FDA FSMA Rule 204 Food
+  Traceability requirements, and Sojo Seal, GPS-enabled tamper-evident seals. Its API surface is
+  the Sojo Shield platform API at api.sojoshield.com and a production Model Context Protocol
+  server for "Victoria", the SOJO Planning Assistant, which exposes production, machine-telemetry,
+  dieline and pallet-pattern planning tools to MCP clients.
+image: https://cdn.prod.website-files.com/693c57b3032e47cda78c8224/6980f69ec74fbeaa81cf114e_Website%20Logo.png
 url: https://raw.githubusercontent.com/api-evangelist/sojo-industries/refs/heads/main/apis.yml
 x-type: company
 x-source: harvest:secondary-market
-x-tier: stub
-x-tier-reason: harvest
 specificationVersion: '0.20'
 created: '2026-08-28'
 modified: '2026-08-28'
 tags:
 - Company
-apis: []
+- Supply Chain
+- Traceability
+- Food and Beverage
+- Manufacturing
+- Logistics
+- Packaging
+- Industrial Automation
+- Blockchain
+- Artificial Intelligence
+- Model Context Protocol
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
+apis:
+- name: SOJO Planning Assistant (Victoria) API
+  description: >-
+    The HTTP surface for Victoria, the SOJO Planning Assistant — a LangGraph-backed agent over
+    Sojo's production and machine-telemetry data. Publishes a public OpenAPI 3.0.3 describing
+    non-streaming orchestration, SSE streaming chat, conversation CRUD/export, image upload and
+    health/readiness probes, and serves a Model Context Protocol streamable-HTTP endpoint at /mcp
+    for Claude Desktop and ChatGPT clients. Authenticated routes take a Stytch session JWT.
+  humanURL: https://sojoshield.com/
+  baseURL: https://victoria-agent.sojoshield.com
+  tags:
+  - Artificial Intelligence
+  - Model Context Protocol
+  - Supply Chain
+  - Manufacturing
+  properties:
+  - type: OpenAPI
+    url: openapi/sojo-industries-victoria-agent-openapi.json
+  - type: MCPServer
+    url: mcp/sojo-industries-mcp.yml
+  - type: ToolCrosswalk
+    url: mcp/sojo-industries-tool-crosswalk.yml
+  - type: Overlay
+    url: overlays/sojo-industries-victoria-agent-overlay.yaml
+  - type: Authentication
+    url: authentication/sojo-industries-authentication.yml
+  - type: ErrorCatalog
+    url: errors/sojo-industries-problem-types.yml
+  - type: DataModel
+    url: data-model/sojo-industries-data-model.yml
+- name: Sojo Shield Platform API
+  description: >-
+    The Sojo Shield track-and-trace platform API, versioned in-path at /api/v3/ and consumed by
+    the Sojo Shield web application at sojoshield.com. Sojo publishes a Swagger UI for it at
+    api.sojoshield.com/docs titled "Shield API"; every data path requires a bearer token, and as
+    of 2026-08-28 the spec document that Swagger UI loads (/swagger.json) returns HTTP 503
+    "Swagger spec not initialised", so no machine-readable contract can currently be retrieved.
+  humanURL: https://api.sojoshield.com/docs
+  baseURL: https://api.sojoshield.com/api/v3/
+  tags:
+  - Traceability
+  - Supply Chain
+  - Food and Beverage
+  properties:
+  - type: APIReference
+    url: https://api.sojoshield.com/docs
 common:
 - type: Website
-  url: https://www.nasdaqprivatemarket.com/
+  url: https://www.sojoindustries.com/
+- type: Application
+  url: https://sojoshield.com/
+- type: APIReference
+  url: https://api.sojoshield.com/docs
+- type: LinkedIn
+  url: https://www.linkedin.com/company/sojoindustries/
+- type: YouTube
+  url: https://www.youtube.com/@SojoFlight
+- type: Media
+  url: https://www.sojoindustries.com/media
+- type: MCPServer
+  url: mcp/sojo-industries-mcp.yml
+- type: ToolCrosswalk
+  url: mcp/sojo-industries-tool-crosswalk.yml
+- type: LLMsTxt
+  url: llms/sojo-industries-llms.txt
+- type: Overlay
+  url: overlays/sojo-industries-victoria-agent-overlay.yaml
+- type: Authentication
+  url: authentication/sojo-industries-authentication.yml
+- type: Conventions
+  url: conventions/sojo-industries-conventions.yml
+- type: ErrorCatalog
+  url: errors/sojo-industries-problem-types.yml
+- type: Lifecycle
+  url: lifecycle/sojo-industries-lifecycle.yml
+- type: Conformance
+  url: conformance/sojo-industries-conformance.yml
+- type: DataModel
+  url: data-model/sojo-industries-data-model.yml
+- type: Packages
+  url: packages/sojo-industries-packages.yml
+- type: Plans
+  url: plans/sojo-industries-plans-pricing.yml
+- type: RateLimits
+  url: rate-limits/sojo-industries-rate-limits.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: DomainSecurity
+  url: security/sojo-industries-domain-security.yml
+x-enrichment:
+  date: '2026-08-28'
+  status: enriched
+  artifacts_added: 20
+  pass: local-v1
+x-coverage:
+  state: covered
+  reason: null
+  detail: >-
+    Fully covered. A live OpenAPI 3.0.3 and a production MCP server with six anonymously
+    introspectable tools were found at victoria-agent.sojoshield.com. One provider-side defect is
+    recorded rather than treated as a coverage failure: the public Swagger UI for the Sojo Shield
+    platform API at api.sojoshield.com/docs loads /swagger.json, which returns HTTP 503
+    "Swagger spec not initialised".
+  evidence:
+  - url: https://victoria-agent.sojoshield.com/openapi.json
+    status: 200
+  - url: https://victoria-agent.sojoshield.com/mcp
+    status: 200
+  - url: https://api.sojoshield.com/swagger.json
+    status: 503
+  - url: https://api.sojoshield.com/docs
+    status: 200
+  checked: '2026-08-28'

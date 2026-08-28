@@ -64,5 +64,10 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-Sojo Industries is a company surfaced via the API Evangelist harvest backlog (source: secondary-market) and added to the network as a stub for full-pipeline profiling.
-- https://www.nasdaqprivatemarket.com/
+Sojo Industries is a national industrial-automation and supply-chain technology company (founded 2021, Bristol, Pennsylvania) serving the food and beverage industry with robotics-driven variety packing, multi-packing and assembly. Its software arm is Sojo Shield, a blockchain-backed track-and-trace platform and Oracle "Built for NetSuite" SuiteApp. Its API surface is the Sojo Shield platform API and a production Model Context Protocol server for "Victoria", the SOJO Planning Assistant.
+
+- Website: https://www.sojoindustries.com/
+- Sojo Shield application: https://sojoshield.com/
+- Shield API reference (Swagger UI): https://api.sojoshield.com/docs
+- Victoria OpenAPI: https://victoria-agent.sojoshield.com/openapi.json
+- MCP endpoint: https://victoria-agent.sojoshield.com/mcp

@@ -1,0 +1,27 @@
+generated: '2026-08-28'
+method: probed
+source: >-
+  unauthenticated responses from https://api.sojoshield.com and
+  https://victoria-agent.sojoshield.com, plus openapi/sojo-industries-victoria-agent-openapi.json
+limit_count: 0
+limits: []
+headers: []
+status_on_exhaustion: null
+retry_after: false
+note: >-
+  No published rate limits and no runtime rate-limit signal. Every unauthenticated response
+  observed on both hosts — 200, 401, 404, 406, 503 — came back with no X-RateLimit-*, no
+  RateLimit-* (RFC 9239 style) and no Retry-After header. The OpenAPI documents no 429 response on
+  any of its 10 operations, and the MCP server returned no rate-limit metadata on initialize or
+  tools/list. An agent calling this API has no way to pace itself except by observing failures.
+evidence:
+- {url: 'https://victoria-agent.sojoshield.com/openapi.json', status: 200, note: 'No 429 documented on any operation; no rate-limit prose in info.description'}
+- {url: 'https://victoria-agent.sojoshield.com/mcp', status: 200, note: 'initialize + tools/list returned no rate-limit headers'}
+- {url: 'https://api.sojoshield.com/api/v3/', status: 401, note: 'No rate-limit headers on the auth-wall response'}
+- {url: 'https://api.sojoshield.com/docs', status: 200, note: 'Swagger UI documents no limits'}
+observed_internal_signal:
+  note: >-
+    Not a rate limit, but the only capacity signal Sojo exposes: GET /health on
+    victoria-agent.sojoshield.com returns live Postgres pool statistics (pool_min 2, pool_max 10,
+    connections_num, requests_waiting) anonymously. That is an operational internal, not a
+    consumer-facing quota.

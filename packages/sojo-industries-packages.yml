@@ -1,0 +1,33 @@
+generated: '2026-08-28'
+method: searched
+source: >-
+  registry.npmjs.org search, pypi.org/pypi/*/json, api.github.com/orgs/sojoindustries,
+  and the provider's own sites (sojoindustries.com, sojoshield.com, api.sojoshield.com/docs)
+package_count: 0
+official_sdk_count: 0
+packages: []
+note: >-
+  Sojo Industries publishes no first-party client library on any registry. No SDK, CLI or code
+  sample is offered on sojoindustries.com, in the Sojo Shield app, or on the public Swagger UI at
+  api.sojoshield.com/docs. No `SDKs` pointer is emitted in apis.yml, because there is no SDK.
+registries_checked:
+- {registry: npm, query: 'sojo shield', endpoint: 'https://registry.npmjs.org/-/v1/search', result: 'no first-party package; all hits are unrelated third-party "shield" libraries', version: null, published: null}
+- {registry: pypi, package: sojo-shield, endpoint: 'https://pypi.org/pypi/sojo-shield/json', status: 404, version: null, published: null}
+- {registry: pypi, package: sojo, endpoint: 'https://pypi.org/pypi/sojo/json', status: 404, version: null, published: null}
+- {registry: 'maven central', result: 'not checked — no JVM surface indicated by any Sojo artifact', version: null, published: null}
+- {registry: nuget, result: 'not checked — no .NET surface indicated by any Sojo artifact', version: null, published: null}
+- {registry: rubygems, result: 'not checked — no Ruby surface indicated by any Sojo artifact', version: null, published: null}
+- {registry: crates.io, result: 'not checked — no Rust surface indicated by any Sojo artifact', version: null, published: null}
+source_control:
+  github_org: https://github.com/sojoindustries
+  status: 200
+  public_repos: 1
+  note: >-
+    A GitHub organisation named `sojoindustries` exists (created 2024-08-06) with one public repo,
+    `sojoindustries/word--scraper` — a Python "EOS word scraper". It has no README linking it to the
+    company, no org description and no website field, so ownership is PLAUSIBLE BUT UNVERIFIED and
+    the repo is unrelated to any Sojo API. No GitHubOrganization pointer is emitted on that basis.
+distribution_note: >-
+  The one distributable Sojo software artifact that does exist is the Sojo Shield SuiteApp,
+  distributed through the Oracle NetSuite SuiteApp marketplace rather than a language registry.
+  It has no version metadata endpoint we can query anonymously.

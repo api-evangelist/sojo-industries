@@ -1,0 +1,112 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements for the SOJO Planning Assistant (Victoria) API
+  version: 1.0.0
+x-generated: '2026-08-28'
+x-method: generated
+x-source: openapi/sojo-industries-victoria-agent-openapi.json
+x-extends: openapi/sojo-industries-victoria-agent-openapi.json
+x-note: >-
+  Non-destructive enhancements over the provider's published OpenAPI 3.0.3. The original is never
+  mutated. Every addition here is either a fact we verified live (the MCP endpoint, the auth wall,
+  the absence of rate-limit headers) or a derived label; none of it changes the provider's semantics.
+  The dominant gaps this overlay marks are: no operationId on any of the 10 operations, empty
+  components.schemas, no response schemas, and an info.version that is an environment label
+  ("langgraph-production") rather than a version.
+actions:
+- target: $.info
+  description: Record provenance, the sibling MCP surface, and the versioning defect.
+  update:
+    x-apievangelist-profile: https://apis.io/provider/sojo-industries
+    x-mcp-endpoint: https://victoria-agent.sojoshield.com/mcp
+    x-mcp-tools: 6
+    x-mcp-discovery-anonymous: true
+    x-version-scheme: none
+    x-version-note: >-
+      info.version is the literal string "langgraph-production", an environment label. Consumers
+      cannot pin or diff a contract revision.
+- target: $
+  description: Record that no operation carries an operationId, which blocks tooling and crosswalks.
+  update:
+    x-apievangelist-findings:
+      operation_ids_declared: 0
+      operations_total: 10
+      component_schemas: 0
+      response_schemas: 0
+      rate_limit_headers: none
+      error_format: 'custom {data,error{code,details}} — not RFC 9457'
+      idempotency: none
+- target: $.paths['/orchestrate'].post
+  description: Suggest an operationId and mark write semantics for agent callers.
+  update:
+    x-suggested-operationId: runOrchestration
+    x-write: true
+    x-idempotent: false
+    x-reversible: false
+    x-agent-note: >-
+      Consumes model and tool budget and appends a conversation turn. No idempotency key exists, so
+      a blind retry after a timeout can duplicate the turn.
+- target: $.paths['/api/chat'].post
+  description: Suggest an operationId and label the streaming protocol.
+  update:
+    x-suggested-operationId: streamChat
+    x-write: true
+    x-idempotent: false
+    x-stream-protocol: 'AI SDK UI Message Stream Protocol over SSE'
+- target: $.paths['/api/chat/conversations'].get
+  description: Suggest an operationId and label pagination.
+  update:
+    x-suggested-operationId: listConversations
+    x-pagination-style: page-number
+    x-pagination-params: [page, limit]
+- target: $.paths['/api/chat/conversation/{session_id}'].get
+  description: Suggest an operationId.
+  update:
+    x-suggested-operationId: getConversation
+- target: $.paths['/api/chat/conversation/{session_id}'].patch
+  description: Suggest an operationId and record that rename is self-reversing.
+  update:
+    x-suggested-operationId: renameConversation
+    x-write: true
+    x-reversible: true
+    x-reversal: 'Re-PATCH with the prior title; last-write-wins.'
+- target: $.paths['/api/chat/conversation/{session_id}'].delete
+  description: Suggest an operationId and record the soft-delete without a published restore path.
+  update:
+    x-suggested-operationId: deleteConversation
+    x-write: true
+    x-destructive: true
+    x-soft-delete: true
+    x-reversal: null
+    x-reversal-window: null
+    x-agent-note: >-
+      The provider describes this as a SOFT delete, but publishes no restore operation and states no
+      retention window. Treat as irreversible from a caller's point of view.
+- target: $.paths['/api/chat/conversation/export/{session_id}'].get
+  description: Suggest an operationId.
+  update:
+    x-suggested-operationId: exportConversation
+- target: $.paths['/upload-image'].post
+  description: Suggest an operationId and flag the unauthenticated write.
+  update:
+    x-suggested-operationId: uploadImage
+    x-write: true
+    x-unauthenticated: true
+    x-agent-note: >-
+      This operation declares no security requirement while every conversation route requires a
+      bearer JWT. It mints the image_id that analyze_dieline and analyze_pallet_pattern consume, and
+      no delete-image operation is published.
+- target: $.paths['/health'].get
+  description: Suggest an operationId and note the detail level of the anonymous response.
+  update:
+    x-suggested-operationId: getHealth
+    x-unauthenticated: true
+    x-agent-note: >-
+      Returns detailed internals anonymously — database pool statistics, Pinecone index name,
+      feature-flag state and auth_enabled. Useful for liveness; more disclosure than a health probe
+      usually carries.
+- target: $.paths['/ready'].get
+  description: Suggest an operationId.
+  update:
+    x-suggested-operationId: getReadiness
+    x-unauthenticated: true

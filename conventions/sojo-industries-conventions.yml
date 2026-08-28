@@ -1,0 +1,143 @@
+generated: '2026-08-28'
+method: derived
+source: >-
+  openapi/sojo-industries-victoria-agent-openapi.json, mcp/sojo-industries-mcp-tools.json,
+  and live unauthenticated probes of api.sojoshield.com + victoria-agent.sojoshield.com
+scope: >-
+  Covers the Victoria (SOJO Planning Assistant) API and MCP server, which are the only Sojo
+  surfaces with a retrievable contract. The Sojo Shield platform API at api.sojoshield.com is
+  behind a host-wide bearer wall and its spec endpoint is broken, so nothing below is asserted
+  about it except the error envelope we observed live.
+
+auth_style:
+  scheme: 'http bearer (JWT)'
+  provider: Stytch
+  header: 'Authorization: Bearer <Stytch session JWT>'
+  see: authentication/sojo-industries-authentication.yml
+
+idempotency:
+  supported: false
+  header: null
+  scope: null
+  retention: null
+  note: >-
+    No idempotency key, header or retention window is documented or declared anywhere in the
+    contract. The write surface (POST /orchestrate, POST /api/chat, POST /upload-image, PATCH and
+    DELETE on a conversation) has no replay protection an agent can rely on. Retrying a failed
+    POST /orchestrate can therefore duplicate an orchestration turn.
+
+pagination:
+  style: page-number
+  operations: ['GET /api/chat/conversations']
+  params: [page, limit]
+  location: query
+  response_fields: null
+  note: >-
+    page and limit are declared as optional query parameters, and 422 is documented for invalid
+    values. The response envelope is not schematised, so the total/next fields (if any) are unknown.
+
+field_expansion:
+  supported: false
+sparse_fieldsets:
+  supported: false
+metadata:
+  supported: false
+
+request_id_tracing:
+  supported: unknown
+  note: >-
+    No request-id or correlation header is documented. Both api.sojoshield.com and
+    victoria-agent.sojoshield.com are instrumented with New Relic browser/APM (the Swagger UI page
+    embeds the NR loader), so tracing exists internally but is not surfaced to callers.
+
+versioning:
+  see: lifecycle/sojo-industries-lifecycle.yml
+  summary: 'Shield API versions in the URI path (/api/v3/); the Victoria API is unversioned (info.version = "langgraph-production").'
+
+error_envelope:
+  format: custom
+  rfc9457: false
+  shape: '{"data":{"message":"..."},"error":{"code":"UPPER_SNAKE","details":{}}}'
+  observed_on: https://api.sojoshield.com
+  see: errors/sojo-industries-problem-types.yml
+
+rate_limit_signaling:
+  headers: []
+  status_on_exhaustion: null
+  note: >-
+    No X-RateLimit-*, RateLimit-* or Retry-After header was returned on any unauthenticated
+    response from either host, and no limits are documented. See rate-limits/.
+
+content_types:
+  request: ['application/json', 'application/octet-stream (POST /upload-image)']
+  response: ['application/json', 'text/event-stream (POST /api/chat, AI SDK UI Message Stream Protocol)']
+
+streaming:
+  supported: true
+  protocol: 'Server-Sent Events'
+  operations: ['POST /api/chat']
+  format: 'Vercel AI SDK UI Message Stream Protocol'
+  mcp_transport: 'streamable-http at POST /mcp; client must send Accept: application/json, text/event-stream (406 otherwise)'
+
+reversibility:
+  applicable: true
+  grade: documented
+  grade_basis: >-
+    One reversal-adjacent operation exists and is described in the contract as a SOFT delete, which
+    is a reversal affordance; but no restore/undo operation is published and NO WINDOW is stated
+    anywhere. Under the pipeline's grading that is `documented` (reversal path present), not
+    `verified` (path plus stated window).
+  write_operations:
+  - operation: 'DELETE /api/chat/conversation/{session_id}'
+    action: 'Delete the conversation (soft)'
+    reversal_operation: null
+    reversal_operationId: null
+    window: null
+    window_source: null
+    note: >-
+      The OpenAPI summary explicitly says "(soft)" and the 404 description says
+      "Absent/already-deleted/foreign conversation", so the row is retained but is no longer
+      addressable through any published operation. There is no restore endpoint and no stated
+      retention period. We do NOT assert a window — none is documented.
+  - operation: 'PATCH /api/chat/conversation/{session_id}'
+    action: 'Rename the conversation'
+    reversal_operation: 'PATCH /api/chat/conversation/{session_id}'
+    reversal_operationId: null
+    window: 'unbounded (rename is a last-write-wins field update)'
+    window_source: null
+    note: 'Self-reversing — re-PATCH with the prior title. No prior-value read is needed because GET returns the thread.'
+  - operation: 'POST /orchestrate'
+    action: 'Run an orchestration turn'
+    reversal_operation: null
+    window: null
+    note: >-
+      Not reversible and not idempotent. An orchestration turn consumes model/tool budget and
+      writes a conversation turn; there is no cancel, no undo, and no idempotency key.
+  - operation: 'POST /api/chat'
+    action: 'Streaming chat turn'
+    reversal_operation: null
+    window: null
+    note: 'Not reversible. The only remedy is deleting the whole conversation (soft).'
+  - operation: 'POST /upload-image'
+    action: 'Upload raw image bytes'
+    reversal_operation: null
+    window: null
+    note: 'No delete-image operation is published. Uploaded objects have no documented retention or removal path.'
+  mcp_tools:
+    note: >-
+      All six published MCP tools are READ-ONLY by their own descriptions — query_database,
+      list_tables, describe_table, get_table_sample, analyze_dieline, analyze_pallet_pattern.
+      Reversibility is `na` for the tool surface; there is nothing to take back.
+
+dry_run_mode:
+  supported: false
+  note: >-
+    No dry-run, preview or validate-only mode on any operation. analyze_dieline and
+    analyze_pallet_pattern both take a `confirmed` boolean, which is a confirmation gate inside the
+    analysis conversation rather than a dry-run of a write.
+
+cross_links:
+  errors: errors/sojo-industries-problem-types.yml
+  lifecycle: lifecycle/sojo-industries-lifecycle.yml
+  authentication: authentication/sojo-industries-authentication.yml
+  rate_limits: rate-limits/sojo-industries-rate-limits.yml

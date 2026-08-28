@@ -1,0 +1,110 @@
+generated: '2026-08-28'
+method: probed
+source: https://victoria-agent.sojoshield.com/mcp
+name: SOJO Planning Assistant MCP Server
+description: >-
+  Sojo Industries operates a production Model Context Protocol server for "Victoria",
+  the SOJO Planning Assistant. It is a remote streamable-HTTP MCP endpoint fronting the
+  Sojo Shield production/planning data core — NetSuite assembly-build production views,
+  Raven machine telemetry (OEE, uptime, downtime), dieline/carton geometry analysis and
+  palletiser pattern compatibility. The endpoint is advertised by the provider's own
+  OpenAPI at https://victoria-agent.sojoshield.com/openapi.json, which states the MCP
+  streamable-http transport is served at /mcp "used by Claude Desktop / ChatGPT clients".
+
+deployment:
+  mode: remote
+  endpoint: https://victoria-agent.sojoshield.com/mcp
+  install: null
+  package: null
+  auth: none
+  verified: probed
+
+server_info:
+  name: SOJO Planning Assistant
+  version: 3.4.5
+  protocol_version: '2025-06-18'
+  transport: streamable-http
+  service_id: sojo-mcp-server
+  environment: production
+  capabilities:
+    tools: {listChanged: true}
+    prompts: {listChanged: true}
+    resources: {subscribe: false, listChanged: true}
+    logging: {}
+    experimental: {}
+    extensions: ['io.modelcontextprotocol/ui']
+
+x-evidence:
+  fetched: '2026-08-28'
+  initialize:
+    url: https://victoria-agent.sojoshield.com/mcp
+    method: 'POST jsonrpc initialize'
+    http_status: 200
+    note: >-
+      Anonymous initialize succeeded and returned a live mcp-session-id. No OAuth
+      challenge, no bearer token supplied.
+  tools_list:
+    url: https://victoria-agent.sojoshield.com/mcp
+    method: 'POST jsonrpc tools/list'
+    http_status: 200
+    tool_count: 6
+    note: >-
+      tools/list returned the real tool set with full inputSchema for every tool,
+      anonymously. Saved verbatim to mcp/sojo-industries-mcp-tools.json.
+  health:
+    url: https://victoria-agent.sojoshield.com/health
+    http_status: 200
+    note: 'service=sojo-mcp-server, auth_enabled=true, persistence=postgres, vector index=sojo-planning-knowledge (Pinecone)'
+  bare_post_without_accept:
+    url: https://victoria-agent.sojoshield.com/mcp
+    http_status: 406
+    note: 'Correct MCP behaviour — client must send Accept: application/json, text/event-stream'
+
+auth_note: >-
+  DISCOVERY is anonymous — initialize and tools/list require no credentials, so an agent
+  can read the full tool contract without an account. INVOCATION is a separate question:
+  /health reports auth_enabled=true and the sibling REST routes (/orchestrate, /api/chat)
+  require a Stytch session JWT resolved against Shield /api/internal/v1/auth/resolve.
+  We did not call any tool, so we do not assert whether tools/call is gated.
+
+tools:
+- name: query_database
+  category: data-query
+  summary: >-
+    Primary RAG-backed tool. Routes SOJO-specific questions across production totals
+    (NetSuite Assembly Build views), machine efficiency/uptime/downtime/OEE (Raven),
+    equipment specs and domain knowledge, returning SQL patterns and documentation.
+  parameters: [question, query, context, session_id, skus, line, facility, num_flavors, pack_size, difference_type, desc1, desc2, output_case]
+  required: []
+- name: list_tables
+  category: schema-introspection
+  summary: List available tables in a database schema.
+  parameters: [database]
+  required: []
+- name: describe_table
+  category: schema-introspection
+  summary: Get table schema (columns, data types).
+  parameters: [table_name, database]
+  required: [table_name]
+- name: get_table_sample
+  category: schema-introspection
+  summary: Get sample rows from a table.
+  parameters: [table_name, limit, database]
+  required: [table_name]
+- name: analyze_dieline
+  category: packaging-engineering
+  summary: >-
+    Analyse an uploaded carton/dieline/packaging drawing — pack size, case dimensions,
+    flap lengths, board type, can size — against a target packaging line.
+  parameters: [pack_size, case_length, case_width, case_height, minor_flap_length, major_flap_top, is_corrugate, target_line, board_type, can_size, confirmed, extraction_notes, image_id, session_id]
+  required: [pack_size]
+- name: analyze_pallet_pattern
+  category: packaging-engineering
+  summary: >-
+    Check a pallet pattern against SOJO's commissioned patterns — pack config, can size,
+    shipper geometry, cases per layer, layers per load, target palletiser.
+  parameters: [pack_config, can_size, shipper_type, shipper_length, shipper_width, shipper_height, cases_per_layer, layers_per_load, picks_per_layer, shipper_pattern, pallet_pattern, target_palletizer, confirmed, image_id, session_id]
+  required: [pack_config]
+
+tool_count: 6
+raw_manifest: mcp/sojo-industries-mcp-tools.json
