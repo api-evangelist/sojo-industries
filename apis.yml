@@ -13,6 +13,17 @@ description: >-
   the Sojo Shield platform API at api.sojoshield.com and a production Model Context Protocol
   server for "Victoria", the SOJO Planning Assistant, which exposes production, machine-telemetry,
   dieline and pallet-pattern planning tools to MCP clients.
+deliveryModel:
+  model: saas
+  open_source: false
+  commercial: true
+  callable_host: false
+  label: Hosted service · you call their endpoint
+  confidence: medium
+  source:
+  - pricing
+  generated: '2026-08-28'
+  method: derived
 image: https://cdn.prod.website-files.com/693c57b3032e47cda78c8224/6980f69ec74fbeaa81cf114e_Website%20Logo.png
 url: https://raw.githubusercontent.com/api-evangelist/sojo-industries/refs/heads/main/apis.yml
 x-type: company
