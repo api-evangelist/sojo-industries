@@ -42,6 +42,18 @@ tags:
 - Industrial Automation
 - Blockchain
 - Artificial Intelligence
+- MCP
+tags_raw:
+- Company
+- Supply Chain
+- Traceability
+- Food and Beverage
+- Manufacturing
+- Logistics
+- Packaging
+- Industrial Automation
+- Blockchain
+- Artificial Intelligence
 - Model Context Protocol
 maintainers:
 - FN: Kin Lane
@@ -59,6 +71,11 @@ apis:
   humanURL: https://sojoshield.com/
   baseURL: https://victoria-agent.sojoshield.com
   tags:
+  - Artificial Intelligence
+  - MCP
+  - Supply Chain
+  - Manufacturing
+  tags_raw:
   - Artificial Intelligence
   - Model Context Protocol
   - Supply Chain
