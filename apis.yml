@@ -76,47 +76,13 @@ maintainers:
 - FN: APIs.json
   email: info@apis.io
 apis:
-- name: SOJO Planning Assistant (Victoria) API
-  description: >-
-    The HTTP surface for Victoria, the SOJO Planning Assistant — a LangGraph-backed agent over
-    Sojo's production and machine-telemetry data. Publishes a public OpenAPI 3.0.3 describing
-    non-streaming orchestration, SSE streaming chat, conversation CRUD/export, image upload and
-    health/readiness probes, and serves a Model Context Protocol streamable-HTTP endpoint at /mcp
-    for Claude Desktop and ChatGPT clients. Authenticated routes take a Stytch session JWT.
-  humanURL: https://sojoshield.com/
-  baseURL: https://victoria-agent.sojoshield.com
-  tags:
-  - Artificial Intelligence
-  - MCP
-  - Supply Chain
-  - Manufacturing
-  tags_raw:
-  - Artificial Intelligence
-  - Model Context Protocol
-  - Supply Chain
-  - Manufacturing
-  properties:
-  - type: OpenAPI
-    url: openapi/sojo-industries-victoria-agent-openapi.json
-  - type: MCPServer
-    url: mcp/sojo-industries-mcp.yml
-  - type: ToolCrosswalk
-    url: mcp/sojo-industries-tool-crosswalk.yml
-  - type: Overlay
-    url: overlays/sojo-industries-victoria-agent-overlay.yaml
-  - type: Authentication
-    url: authentication/sojo-industries-authentication.yml
-  - type: ErrorCatalog
-    url: errors/sojo-industries-problem-types.yml
-  - type: DataModel
-    url: data-model/sojo-industries-data-model.yml
 - name: Sojo Shield Platform API
   description: >-
-    The Sojo Shield track-and-trace platform API, versioned in-path at /api/v3/ and consumed by
-    the Sojo Shield web application at sojoshield.com. Sojo publishes a Swagger UI for it at
-    api.sojoshield.com/docs titled "Shield API"; every data path requires a bearer token, and as
-    of 2026-08-28 the spec document that Swagger UI loads (/swagger.json) returns HTTP 503
-    "Swagger spec not initialised", so no machine-readable contract can currently be retrieved.
+    The Sojo Shield track-and-trace platform API, versioned in-path at /api/v3/ and consumed by the Sojo
+    Shield web application at sojoshield.com. Sojo publishes a Swagger UI for it at api.sojoshield.com/docs
+    titled "Shield API"; every data path requires a bearer token, and as of 2026-08-28 the spec document
+    that Swagger UI loads (/swagger.json) returns HTTP 503 "Swagger spec not initialised", so no machine-readable
+    contract can currently be retrieved.
   humanURL: https://api.sojoshield.com/docs
   baseURL: https://api.sojoshield.com/api/v3/
   tags:
@@ -126,6 +92,80 @@ apis:
   properties:
   - type: APIReference
     url: https://api.sojoshield.com/docs
+- aid: sojo-industries:sojo-industries-chat-api
+  name: Sojo Industries Chat API
+  description: Orchestration / streaming chat
+  humanURL: https://sojoshield.com/
+  baseURL: https://victoria-agent.sojoshield.com
+  tags:
+  - Chat
+  properties:
+  - type: OpenAPI
+    url: openapi/sojo-industries-chat-api-openapi.yml
+  - type: ToolCrosswalk
+    url: mcp/sojo-industries-tool-crosswalk.yml
+  - type: Authentication
+    url: authentication/sojo-industries-authentication.yml
+  - type: ErrorCatalog
+    url: errors/sojo-industries-problem-types.yml
+  - type: DataModel
+    url: data-model/sojo-industries-data-model.yml
+- aid: sojo-industries:sojo-industries-conversations-api
+  name: Sojo Industries Conversations API
+  description: >-
+    Chat-history list/read/rename/delete (requires AGENT_PERSISTENCE_ENABLED; 404 when the feature is
+    off)
+  humanURL: https://sojoshield.com/
+  baseURL: https://victoria-agent.sojoshield.com
+  tags:
+  - Conversations
+  properties:
+  - type: OpenAPI
+    url: openapi/sojo-industries-conversations-api-openapi.yml
+  - type: ToolCrosswalk
+    url: mcp/sojo-industries-tool-crosswalk.yml
+  - type: Authentication
+    url: authentication/sojo-industries-authentication.yml
+  - type: ErrorCatalog
+    url: errors/sojo-industries-problem-types.yml
+  - type: DataModel
+    url: data-model/sojo-industries-data-model.yml
+- aid: sojo-industries:sojo-industries-files-api
+  name: Sojo Industries Files API
+  description: Image upload (files are uploaded via Shield, then referenced by S3 key)
+  humanURL: https://sojoshield.com/
+  baseURL: https://victoria-agent.sojoshield.com
+  tags:
+  - Files
+  properties:
+  - type: OpenAPI
+    url: openapi/sojo-industries-files-api-openapi.yml
+  - type: ToolCrosswalk
+    url: mcp/sojo-industries-tool-crosswalk.yml
+  - type: Authentication
+    url: authentication/sojo-industries-authentication.yml
+  - type: ErrorCatalog
+    url: errors/sojo-industries-problem-types.yml
+  - type: DataModel
+    url: data-model/sojo-industries-data-model.yml
+- aid: sojo-industries:sojo-industries-health-api
+  name: Sojo Industries Health API
+  description: Health probe
+  humanURL: https://sojoshield.com/
+  baseURL: https://victoria-agent.sojoshield.com
+  tags:
+  - Health
+  properties:
+  - type: OpenAPI
+    url: openapi/sojo-industries-health-api-openapi.yml
+  - type: ToolCrosswalk
+    url: mcp/sojo-industries-tool-crosswalk.yml
+  - type: Authentication
+    url: authentication/sojo-industries-authentication.yml
+  - type: ErrorCatalog
+    url: errors/sojo-industries-problem-types.yml
+  - type: DataModel
+    url: data-model/sojo-industries-data-model.yml
 common:
 - type: Website
   url: https://www.sojoindustries.com/
