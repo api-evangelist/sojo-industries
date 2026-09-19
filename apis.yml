@@ -136,6 +136,8 @@ apis:
   humanURL: https://sojoshield.com/
   baseURL: https://victoria-agent.sojoshield.com
   tags:
+  - File
+  tags_raw:
   - Files
   properties:
   - type: OpenAPI
