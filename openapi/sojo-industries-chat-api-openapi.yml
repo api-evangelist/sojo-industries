@@ -1,0 +1,158 @@
+openapi: 3.2.0
+info:
+  title: Victoria Planning Assistant Chat API
+  version: langgraph-production
+  description: HTTP surface for the Victoria (victoria-agent) planning assistant.
+servers:
+- url: https://victoria-agent.sojoshield.com
+  description: This host
+- url: https://victoria-agent.sojoshield.dev
+  description: Staging
+tags:
+- name: Chat
+  description: Orchestration / streaming chat
+paths:
+  /orchestrate:
+    post:
+      tags:
+      - Chat
+      summary: Run a (non-streaming) orchestration turn
+      description: Routes a user message + optional files through the unified LangGraph pipeline and returns a structured result.
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                session_id:
+                  type:
+                  - string
+                  - 'null'
+                files:
+                  type: array
+                  items:
+                    type: object
+                    description: 'Reference an uploaded file by exactly one of: `file_path` (preferred — the S3 key returned after uploading via Shield''s `/cloud/access-url`, e.g. `victoria/<org>/<user>/<filename>`; the server reads the bytes through Shield S3) or `data` (inline base64 fallback). The chat surface also accepts these as `file` message parts: `{type:"file", url, mediaType, filename}`.'
+                    properties:
+                      type:
+                        type: string
+                      media_type:
+                        type: string
+                      file_path:
+                        type: string
+                        description: S3 key from Shield's access-url flow; preferred reference
+                      filename:
+                        type: string
+                        description: leaf filename; display name shown in the UI
+                      data:
+                        type: string
+                        description: base64-encoded bytes (inline fallback path)
+              required:
+              - message
+      responses:
+        '200':
+          description: Orchestration result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                  session_id:
+                    type: string
+                  tool_used:
+                    type:
+                    - string
+                    - 'null'
+                  metadata:
+                    type: object
+                  needs_input:
+                    type: boolean
+        '400':
+          description: Message or files required
+        '401':
+          description: Missing/invalid token (when auth enabled)
+        '422':
+          description: An attached file could not be read (out-of-scope key or unreadable object) — re-upload and retry
+        '503':
+          description: Retrieval failed at the connector level (treated as infra error)
+      operationId: postOrchestrate
+      x-operation-id-source: derived
+  /api/chat:
+    post:
+      tags:
+      - Chat
+      summary: Streaming chat (Server-Sent Events)
+      description: 'SSE wrapper around orchestration, speaking the **AI SDK UI Message Stream Protocol** (`@ai-sdk/react`). The response is a `text/event-stream` of `data: {json}\n\n` frames: `data-conversation` (the very first frame, before `start` — only when chat history is enabled), `start`, `data-plan`, `data-thinking`, `text-start`/`text-delta`/`text-end`, `tool-input-available`, `tool-output-available`/`tool-output-error`, `data-artifact`, `data-final-text`, `data-cancelled`, `data-debug` (dev-only, off by default), `error`, and exactly one terminal `finish`. See `contracts/frontend-streaming-contract.md`.'
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messages:
+                  type: array
+                  description: Chat history (AI SDK shape); the latest user message is used.
+                  items:
+                    type: object
+                message:
+                  type: string
+                  description: 'Alternative to messages: a single user message.'
+                runConfig:
+                  type: object
+                  description: AI SDK run config — the FE's native way to pass the conversation id.
+                  properties:
+                    sessionId:
+                      type: string
+                      description: 'Conversation id (the contract field). Omit (or send empty) to start a NEW conversation — the server mints a uuid and returns it on the first SSE frame (data-conversation). Precedence: runConfig.sessionId > runConfig.conversation_id (forward-compat alias for the sc-20601 rename) > server-generated.'
+                    conversation_id:
+                      type: string
+                      description: Forward-compat alias of runConfig.sessionId (the future sc-20601 rename); same value. sessionId wins when both are sent.
+                files:
+                  type: array
+                  items:
+                    type: object
+                    description: 'Reference an uploaded file by exactly one of: `file_path` (preferred — the S3 key returned after uploading via Shield''s `/cloud/access-url`, e.g. `victoria/<org>/<user>/<filename>`; the server reads the bytes through Shield S3) or `data` (inline base64 fallback). The chat surface also accepts these as `file` message parts: `{type:"file", url, mediaType, filename}`.'
+                    properties:
+                      type:
+                        type: string
+                      media_type:
+                        type: string
+                      file_path:
+                        type: string
+                        description: S3 key from Shield's access-url flow; preferred reference
+                      filename:
+                        type: string
+                        description: leaf filename; display name shown in the UI
+                      data:
+                        type: string
+                        description: base64-encoded bytes (inline fallback path)
+      responses:
+        '200':
+          description: SSE stream (AI SDK UI Message Stream Protocol)
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          description: No user message provided
+        '401':
+          description: Missing/invalid token (when auth enabled)
+      operationId: postApiChat
+      x-operation-id-source: derived
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Stytch session JWT. Pass as ''Authorization: Bearer <token>''.'

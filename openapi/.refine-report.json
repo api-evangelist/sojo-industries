@@ -1,0 +1,26 @@
+{
+  "provider": "sojo-industries",
+  "sources": [
+    "_original/sojo-industries-victoria-agent-openapi.json"
+  ],
+  "outputs": [
+    "sojo-industries-chat-api-openapi.yml",
+    "sojo-industries-conversations-api-openapi.yml",
+    "sojo-industries-files-api-openapi.yml",
+    "sojo-industries-health-api-openapi.yml"
+  ],
+  "archived": [],
+  "errors": [],
+  "warnings": [],
+  "notes": [
+    "sourced from openapi/_original/ (1 archived document(s)); previously refined output at the top level was skipped rather than re-split",
+    "sojo-industries-victoria-agent-openapi.json: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
+    "apis.yml register: already-registered"
+  ],
+  "skipped": [
+    "sojo-industries-chat-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "sojo-industries-conversations-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "sojo-industries-files-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "sojo-industries-health-api-openapi.yml: previously refined output, superseded by openapi/_original/"
+  ]
+}

@@ -1,0 +1,79 @@
+openapi: 3.2.0
+info:
+  title: Victoria Planning Assistant Health API
+  version: langgraph-production
+  description: HTTP surface for the Victoria (victoria-agent) planning assistant.
+servers:
+- url: https://victoria-agent.sojoshield.com
+  description: This host
+- url: https://victoria-agent.sojoshield.dev
+  description: Staging
+tags:
+- name: Health
+  description: Health probe
+paths:
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Health check (load balancers)
+      description: Service status plus `database`, `pinecone`, `auth_enabled`, `redis` (auth-cache), and `hitl` (clarify kill-switch state, incl. unrecognized env values) health. Redis and hitl are report-only and do not gate health.
+      responses:
+        '200':
+          description: Healthy/degraded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  service:
+                    type: string
+                  environment:
+                    type: string
+                  version:
+                    type: string
+                  database:
+                    type: object
+                  pinecone:
+                    type: object
+                  auth_enabled:
+                    type: boolean
+                  redis:
+                    type: object
+                  hitl:
+                    type: object
+        '503':
+          description: Unhealthy
+      operationId: getHealth
+      x-operation-id-source: derived
+  /ready:
+    get:
+      tags:
+      - Health
+      summary: Readiness probe (fail-closed on persistence)
+      description: 200 when persistence is disabled or its deep check (pool + required tables) passes; 503 with a reason otherwise. Intended for the k8s readinessProbe once the flag is flipped.
+      responses:
+        '200':
+          description: Ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  persistence:
+                    type: string
+        '503':
+          description: Persistence enabled but not healthy (reason included)
+      operationId: getReady
+      x-operation-id-source: derived
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Stytch session JWT. Pass as ''Authorization: Bearer <token>''.'

@@ -1,0 +1,51 @@
+openapi: 3.2.0
+info:
+  title: Victoria Planning Assistant Files API
+  version: langgraph-production
+  description: HTTP surface for the Victoria (victoria-agent) planning assistant.
+servers:
+- url: https://victoria-agent.sojoshield.com
+  description: This host
+- url: https://victoria-agent.sojoshield.dev
+  description: Staging
+tags:
+- name: Files
+  description: Image upload (files are uploaded via Shield, then referenced by S3 key)
+paths:
+  /upload-image:
+    post:
+      tags:
+      - Files
+      summary: Upload raw image bytes
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image_id:
+                    type: string
+                  size_kb:
+                    type: number
+                  expires_in:
+                    type: integer
+        '400':
+          description: Empty body
+      operationId: postUploadImage
+      x-operation-id-source: derived
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Stytch session JWT. Pass as ''Authorization: Bearer <token>''.'

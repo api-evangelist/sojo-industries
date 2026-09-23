@@ -1,0 +1,282 @@
+openapi: 3.2.0
+info:
+  title: Victoria Planning Assistant Conversations API
+  version: langgraph-production
+  description: HTTP surface for the Victoria (victoria-agent) planning assistant.
+servers:
+- url: https://victoria-agent.sojoshield.com
+  description: This host
+- url: https://victoria-agent.sojoshield.dev
+  description: Staging
+tags:
+- name: Conversations
+  description: Chat-history list/read/rename/delete (requires AGENT_PERSISTENCE_ENABLED; 404 when the feature is off)
+paths:
+  /api/chat/conversations:
+    get:
+      tags:
+      - Conversations
+      summary: List the caller's conversations (paginated)
+      description: Most-recent-first. Identity comes from the resolved token; admins see their whole org. Returns 404 when chat history is disabled (`AGENT_PERSISTENCE_ENABLED=false`) — deterministic feature detection for the FE.
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 15
+      responses:
+        '200':
+          description: Page of conversations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        session_id:
+                          type: string
+                          format: uuid
+                        title:
+                          type: string
+                        updated_at:
+                          type: string
+                          format: date-time
+                  total:
+                    type: integer
+        '401':
+          description: No identity (missing/invalid token, or bypass origin)
+        '404':
+          description: Chat history is not enabled
+        '422':
+          description: Invalid page/limit
+      operationId: getApiChatConversations
+      x-operation-id-source: derived
+  /api/chat/conversation/{session_id}:
+    parameters:
+    - name: session_id
+      in: path
+      required: true
+      description: The conversation id — the same uuid the FE receives on the `data-conversation` SSE frame / sends as `runConfig.sessionId`.
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Conversations
+      summary: Get the full message thread
+      description: Messages are Vercel `ai` UIMessage-shaped (`parts`, never `content`). 404 for absent, deleted, or another tenant's conversation (never 403).
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Conversation thread
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        role:
+                          type: string
+                          enum:
+                          - user
+                          - assistant
+                        parts:
+                          type: array
+                          description: AI SDK UIMessage parts. `text` parts carry the message text; `file` parts carry an attachment. On a user message the `url` is the S3 key from Shield's upload flow (`victoria/<org>/<user>/<file>`); on an assistant message it is a readable url for a Victoria-generated file.
+                          items:
+                            type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                - text
+                                - file
+                              text:
+                                type: string
+                                description: for text parts
+                              mediaType:
+                                type: string
+                                description: for file parts
+                              filename:
+                                type: string
+                                description: for file parts
+                              url:
+                                type: string
+                                description: 'for file parts: S3 key (user upload) or readable url (generated file)'
+        '401':
+          description: No identity
+        '404':
+          description: Absent/deleted/foreign conversation, or chat history disabled
+      operationId: getApiChatConversationBySessionId
+      x-operation-id-source: derived
+    patch:
+      tags:
+      - Conversations
+      summary: Rename the conversation
+      description: The only title writer besides first-turn auto-titling; later turns never clobber a rename.
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 60
+              required:
+              - title
+      responses:
+        '200':
+          description: Renamed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+        '401':
+          description: No identity
+        '404':
+          description: Absent/deleted/foreign conversation, or chat history disabled
+        '422':
+          description: Title must be 1-60 characters after trimming
+      operationId: patchApiChatConversationBySessionId
+      x-operation-id-source: derived
+    delete:
+      tags:
+      - Conversations
+      summary: Delete the conversation (soft)
+      description: Sets status=deleted; afterwards every read/rename/delete/append answers 404. Rows are physically purged by the retention job.
+      security:
+      - BearerAuth: []
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          description: No identity
+        '404':
+          description: Absent/already-deleted/foreign conversation, or chat history disabled
+      operationId: deleteApiChatConversationBySessionId
+      x-operation-id-source: derived
+  /api/chat/conversation/export/{session_id}:
+    parameters:
+    - name: session_id
+      in: path
+      required: true
+      description: The conversation id to export.
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Conversations
+      summary: Export the thread as a debug snapshot
+      description: 'Legacy export schema: flattened `content` + `timestamp` per message, with assistant messages also carrying the persisted observability `metadata`/`tool_used`/`images_count`. Response body is wrapped under `data` like every other conversations endpoint (sc-21556). Conversations created before debug-metadata persistence shipped export with `metadata: null`. 404 for absent, deleted, or another tenant''s conversation (never 403).'
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Conversation export
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      exported_at:
+                        type: string
+                        format: date-time
+                      title:
+                        type: string
+                      session_id:
+                        type: string
+                        format: uuid
+                      mode:
+                        type: string
+                      user_agent:
+                        type:
+                        - string
+                        - 'null'
+                      file_url_ttl_seconds:
+                        type: integer
+                        description: present only when a message carries a presigned url
+                      messages:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            role:
+                              type: string
+                              enum:
+                              - user
+                              - assistant
+                            content:
+                              type: string
+                            timestamp:
+                              type:
+                              - string
+                              - 'null'
+                              format: date-time
+                            tool_used:
+                              type:
+                              - string
+                              - 'null'
+                              description: assistant messages only
+                            metadata:
+                              type:
+                              - object
+                              - 'null'
+                              description: assistant messages only; debug observability trace
+                            images_count:
+                              type: integer
+                              description: assistant messages only
+        '401':
+          description: No identity
+        '404':
+          description: Absent/deleted/foreign conversation, or chat history disabled
+      operationId: getApiChatConversationExportBySessionId
+      x-operation-id-source: derived
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Stytch session JWT. Pass as ''Authorization: Bearer <token>''.'
