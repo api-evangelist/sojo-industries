@@ -64,10 +64,115 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-Sojo Industries is a national industrial-automation and supply-chain technology company (founded 2021, Bristol, Pennsylvania) serving the food and beverage industry with robotics-driven variety packing, multi-packing and assembly. Its software arm is Sojo Shield, a blockchain-backed track-and-trace platform and Oracle "Built for NetSuite" SuiteApp. Its API surface is the Sojo Shield platform API and a production Model Context Protocol server for "Victoria", the SOJO Planning Assistant.
+Sojo Industries is a national industrial-automation and supply-chain technology company founded in 2021 and headquartered in Bristol, Pennsylvania, serving the food and beverage industry with robotics-driven variety packing, multi-packing and assembly. It operates fixed Sojo Hubs across Pennsylvania, New Jersey, California and Texas plus Sojo Flight mobile manufacturing lines that are trucked to a customer's own plant to eliminate freight, labour and packaging cost. Its software arm is Sojo Shield, a blockchain-backed track-and-trace platform — a Built for NetSuite SuiteApp — that captures geolocated critical tracking events from the factory floor through to the retailer so brands can meet the FDA FSMA Rule 204 Food Traceability requirements, and Sojo Seal, GPS-enabled tamper-evident seals. Its API surface is the Sojo Shield platform API at api.sojoshield.com and a production Model Context Protocol server for "Victoria", the SOJO Planning Assistant, which exposes production, machine-telemetry, dieline and pallet-pattern planning tools to MCP clients.
 
-- Website: https://www.sojoindustries.com/
-- Sojo Shield application: https://sojoshield.com/
-- Shield API reference (Swagger UI): https://api.sojoshield.com/docs
-- Victoria OpenAPI: https://victoria-agent.sojoshield.com/openapi.json
-- MCP endpoint: https://victoria-agent.sojoshield.com/mcp
+**Areas:** Company · Supply Chain · Traceability · Food and Beverage · Manufacturing · Logistics · Packaging · Industrial Automation · Blockchain · Artificial Intelligence · MCP
+
+## Sojo Industries on APIs.io
+
+Everything profiled for Sojo Industries is published on APIs.io rather than in this repository. Start at the provider page — **[apis.io/providers/sojo-industries/](https://apis.io/providers/sojo-industries/)** — or go straight to one of the APIs or properties below.
+
+### APIs (5)
+
+- [Sojo Shield Platform API](https://apis.io/apis/sojo-industries/sojo-shield-platform-api/) — The Sojo Shield track-and-trace platform API, versioned in-path at /api/v3/ and consumed by the Sojo Shield web application at sojoshield.com. Sojo…
+- [Sojo Industries Chat API](https://apis.io/apis/sojo-industries/sojo-industries-chat-api/) — Orchestration / streaming chat
+- [Sojo Industries Conversations API](https://apis.io/apis/sojo-industries/sojo-industries-conversations-api/) — Chat-history list/read/rename/delete (requires AGENT_PERSISTENCE_ENABLED; 404 when the feature is off)
+- [Sojo Industries Files API](https://apis.io/apis/sojo-industries/sojo-industries-files-api/) — Image upload (files are uploaded via Shield, then referenced by S3 key)
+- [Sojo Industries Health API](https://apis.io/apis/sojo-industries/sojo-industries-health-api/) — Health probe
+
+### Published properties
+
+Each property below is a page on APIs.io carrying the machine-readable artifact and what it says.
+
+#### MCP servers (1)
+
+Model Context Protocol servers that expose the API to agents.
+
+- [SOJO Planning Assistant MCP Server](https://apis.io/servers/sojo-industries/sojo-planning-assistant-mcp-server/)
+
+#### Overlays (1)
+
+OpenAPI overlays, including conversational phrasing for each operation.
+
+- [Sojo Industries Victoria Agent Overlay](https://apis.io/overlays/sojo-industries/sojo-industries-victoria-agent-overlay/)
+
+#### Security (2)
+
+Authentication, trust centre, and vulnerability disclosure.
+
+- [Sojo Industries Authentication](https://apis.io/security/sojo-industries/sojo-industries-authentication/)
+- [Sojo Industries Domain Security](https://apis.io/security/sojo-industries/sojo-industries-domain-security/)
+
+#### Plans and pricing (1)
+
+Published plans, tiers and prices.
+
+- [Sojo Industries Plans Pricing](https://apis.io/plans/sojo-industries/sojo-industries-plans-pricing/)
+
+#### Rate limits (1)
+
+Published request limits.
+
+- [Sojo Industries Rate Limits](https://apis.io/rate-limits/sojo-industries/sojo-industries-rate-limits/)
+
+## Where to find this API
+
+Links to the company's own pages. This repository publishes no copy of their specifications — the canonical document is theirs and lives at the URLs below.
+
+- [Website](https://www.sojoindustries.com/)
+- [API reference](https://api.sojoshield.com/docs)
+
+## API Evangelist rating
+
+**Kin Score 23.9** — emerging · rubric 0.25.0 · scored 2026-10-23
+
+| Facet | Score |
+|---|---|
+| Discoverability | 68.3 |
+| Contract quality | 45.3 |
+| Contract governance | 18.2 |
+| Operational transparency | 0.0 |
+| Developer ergonomics | 20.8 |
+| Access clarity | 0.0 |
+
+**Agent readiness 27.2** — agent-aware
+
+| Agent-readiness dimension | Result |
+|---|---|
+| Spec Presence | yes |
+| Agentic Access | — |
+| Reversibility Documented | — |
+| MCP Server | documented (partial credit) |
+| Auth Clarity | bearer (partial credit) |
+| Idempotency | — |
+| Error Semantics | derived (partial credit) |
+| OpenAPI Examples | — |
+| Rate Limit Signal | documented (partial credit) |
+| Event Surface Described | — |
+| Agent Skills | derived (partial credit) |
+| Well Known Catalog | — |
+| Consent Identity | — |
+| Agent Card | — |
+| Dry Run Mode | — |
+| Delegated Identity | — |
+| Protected Resource Metadata | — |
+| Dynamic Client Registration | — |
+| Agentic Commerce | — |
+| Pagination Ratio | paginated |
+| Operation Distinctiveness | distinct |
+
+**Regulatory alignment 15.5** — Horizontal (data, software, accessibility, platform)
+
+The rubric is published at [github.com/api-evangelist/kin-score](https://github.com/api-evangelist/kin-score). The per-check breakdown behind these numbers — which checks were earned, partial or missed — along with score history and how this provider compares to its peers, is available at [apis.io/providers/sojo-industries/](https://apis.io/providers/sojo-industries/).
+
+## How this profile is made
+
+API Evangelist profiles a company's public API surface the way a developer would find it: the website, developer portal and documentation, the specifications it publishes, its public repositories, and its pricing, status and changelog pages. From that it derives the properties above — contracts split per API, workflows, schemas, collections, governance rules, plans and rate limits — and scores them against the published [Kin Score rubric](https://github.com/api-evangelist/kin-score).
+
+The artifacts are published on [APIs.io](https://apis.io), not in this repository. This repository is the public record for Sojo Industries: the place to say something is wrong, missing or out of date, and to ask for a re-score or a removal.
+
+## Open an issue
+
+- **Something about this listing** — a wrong description, a missing API, a stale artifact or a question about the rating: [open an issue on this repository](https://github.com/api-evangelist/sojo-industries/issues/new).
+- **A new API, or one that is not in the catalog yet** — [submit it on APIs.io](https://apis.io/add/).
+- **Anything else** — [the APIs.io inbox](https://github.com/api-search/inbox/issues/new) or [info@apievangelist.com](mailto:info@apievangelist.com).
